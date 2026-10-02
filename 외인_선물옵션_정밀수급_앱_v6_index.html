@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.json">
+<title>외인 선물·옵션 정밀 수급판 v6</title>
+<style>
+*{box-sizing:border-box} body{margin:0;background:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}
+header{position:sticky;top:0;z-index:5;background:#111827;color:#fff;padding:14px 16px 12px;box-shadow:0 2px 10px #0002}
+h1{font-size:20px;margin:0 0 4px}.sub{font-size:12px;color:#cbd5e1}
+main{max-width:720px;margin:auto;padding:12px 12px 80px}
+.card{background:#fff;border-radius:16px;padding:15px;margin:10px 0;box-shadow:0 2px 8px #0000000d}
+.card h2{font-size:16px;margin:0 0 6px}.hint{font-size:12px;color:#64748b;line-height:1.5;margin:5px 0 12px}
+.badge{display:inline-block;border-radius:999px;background:#e5e7eb;padding:4px 9px;font-size:11px;margin:2px 4px 2px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px}
+input,select{width:100%;font-size:16px;padding:11px 10px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+input[readonly]{background:#f8fafc;color:#475569}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.mini{font-size:11px;color:#64748b}
+.sectionbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+button{border:0;border-radius:10px;padding:11px 13px;font-weight:700;cursor:pointer}
+.primary{background:#111827;color:white}.secondary{background:#e5e7eb;color:#111827}.danger{background:#fee2e2;color:#991b1b}
+.scorebox{text-align:center;padding:18px;border-radius:16px;background:#111827;color:#fff}
+.score{font-size:48px;font-weight:800;line-height:1}.scorelabel{font-size:13px;color:#cbd5e1;margin-top:6px}
+.kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.k{background:#f8fafc;border-radius:12px;padding:10px}.k b{display:block;font-size:18px}.k span{font-size:11px;color:#64748b}
+.result{font-size:15px;font-weight:800;padding:12px;border-radius:12px;background:#f1f5f9;margin-top:10px}
+.good{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px 5px;border-bottom:1px solid #e5e7eb;text-align:right}th:first-child,td:first-child{text-align:left}
+details summary{cursor:pointer;font-weight:800}.muted{color:#64748b}.small{font-size:11px;line-height:1.5}
+footer{font-size:11px;color:#64748b;text-align:center;padding:15px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.row{grid-template-columns:1fr 1fr}.score{font-size:42px}}
+</style>
+</head>
+<body>
+<header><h1>외인 선물·옵션 정밀 수급판 v6</h1><div class="sub">매일 같은 기준시각으로 누적 · 과거 유사패턴 분석</div></header>
+<main>
+<div class="card">
+  <div class="sectionbar"><h2>① 입력 기준</h2><span class="badge">정규장 마감 스냅샷</span></div>
+  <div class="hint">
+    <b>원칙:</b> 장중 아무 때나 넣지 않고 매 거래일 <b>15:45 부근</b>의 데이터를 한 번 저장합니다.
+    옵션은 그 시점의 <b>ATM(현물에 가장 가까운 행사가)</b>를 사용합니다.
+  </div>
+  <div class="grid">
+    <div><label>날짜</label><input id="date" type="date"></div>
+    <div><label>기준시각</label><input value="15:45 (고정)" readonly></div>
+    <div><label>선물 계약월</label>
+      <select id="contract">
+        <option>202612</option><option>202703</option><option>202706</option><option>202709</option><option>202712</option>
+      </select>
+      <div class="mini">예: 현재 주력 계약이 F202612라면 202612</div>
+    </div>
+    <div><label>옵션 만기까지 남은 일수</label><input id="dte" type="number" step="1" placeholder="예: 7"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sectionbar"><h2>② 영웅문/S Futures 선물시세</h2><span class="badge">사진 순서대로</span></div>
+  <div class="hint">선물은 선택한 주력 월물(F202612 등)의 마감값을 입력합니다. 월물이 바뀌면 계약월만 변경하세요.</div>
+  <div class="grid">
+    <div><label>KOSPI200 현재가</label><input id="spot" type="number" step="0.01"></div>
+    <div><label>선물 현재가</label><input id="fut" type="number" step="0.01"></div>
+    <div><label>선물 등락</label><input id="futchg" type="number" step="0.01"></div>
+    <div><label>거래량</label><input id="vol" type="number" step="1"></div>
+    <div><label>거래량 전일대비</label><input id="volchg" type="number" step="1"></div>
+    <div><label>미결제약정(OI)</label><input id="oi" type="number" step="1"></div>
+    <div><label>OI 증감</label><input id="oichg" type="number" step="1"></div>
+    <div><label>시장 베이시스</label><input id="basis" type="number" step="0.01"></div>
+    <div><label>이론가격 (선택)</label><input id="theo" type="number" step="0.01"></div>
+    <div><label>이론 베이시스 (선택)</label><input id="theobasis" type="number" step="0.01"></div>
+    <div><label>거래대금 (선택, 백만원)</label><input id="value" type="number" step="1"></div>
+  </div>
+  <div class="result" id="basisCheck">시장베이시스 자동확인: -</div>
+</div>
+
+<div class="card">
+  <div class="sectionbar"><h2>③ M-able 선물 투자자동향</h2><span class="badge">외국인</span></div>
+  <div class="hint">사진에 보이는 외국인 <b>매도/매수</b>를 그대로 입력하면 순매수는 자동 계산합니다.</div>
+  <div class="row">
+    <div><label>외국인 매도</label><input id="fsell" type="number" step="1"></div>
+    <div><label>외국인 매수</label><input id="fbuy" type="number" step="1"></div>
+    <div><label>외국인 순매수</label><input id="fnet" type="number" readonly></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sectionbar"><h2>④ M-able 콜옵션 투자자동향</h2><span class="badge">외국인</span></div>
+  <div class="row">
+    <div><label>외국인 매도</label><input id="csell" type="number" step="1"></div>
+    <div><label>외국인 매수</label><input id="cbuy" type="number" step="1"></div>
+    <div><label>외국인 순매수</label><input id="cnet" type="number" readonly></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sectionbar"><h2>⑤ M-able 풋옵션 투자자동향</h2><span class="badge">외국인</span></div>
+  <div class="row">
+    <div><label>외국인 매도</label><input id="psell" type="number" step="1"></div>
+    <div><label>외국인 매수</label><input id="pbuy" type="number" step="1"></div>
+    <div><label>외국인 순매수</label><input id="pnet" type="number" readonly></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="sectionbar"><h2>⑥ 영웅문 옵션시세 — ATM</h2><span class="badge">마감 시점</span></div>
+  <div class="hint">
+    KOSPI200과 가장 가까운 행사가를 고릅니다. 예: KOSPI200 1,104.94 → 1,105 행.
+    <b>콜/풋은 반드시 같은 행사가</b>를 사용합니다.
+  </div>
+  <div class="grid">
+    <div><label>기준행사가(ATM)</label><input id="strike" type="number" step="0.01"></div>
+    <div><label>콜 현재가</label><input id="callpx" type="number" step="0.01"></div>
+    <div><label>풋 현재가</label><input id="putpx" type="number" step="0.01"></div>
+    <div><label>콜 IV (%)</label><input id="calliv" type="number" step="0.01"></div>
+    <div><label>풋 IV (%)</label><input id="putiv" type="number" step="0.01"></div>
+  </div>
+  <div class="result" id="atmCheck">ATM 확인: -</div>
+</div>
+
+<div class="card">
+  <div class="sectionbar"><h2>⑦ 오늘의 분석</h2><button class="primary" onclick="calc()">계산</button></div>
+  <div class="scorebox">
+    <div class="score" id="score">--</div>
+    <div class="scorelabel">종합 수급 점수 (-100 ~ +100)</div>
+  </div>
+  <div class="kpi">
+    <div class="k"><span>선물 포지션</span><b id="position">-</b></div>
+    <div class="k"><span>옵션 방향 점수</span><b id="opscore">-</b></div>
+    <div class="k"><span>IV 스큐</span><b id="ivskew">-</b></div>
+    <div class="k"><span>추가 상승 여력</span><b id="upside">-</b></div>
+  </div>
+  <div class="result" id="todayText">데이터를 입력하고 계산하세요.</div>
+</div>
+
+<div class="card">
+  <details open>
+    <summary>⑧ 과거 유사패턴 분석</summary>
+    <div class="hint">
+      최소 30거래일 이상 쌓이면 현재와 비슷한 과거 사례를 찾아 20거래일/60거래일 뒤 실제 KOSPI200 변화를 계산합니다.
+      표본이 적으면 '판단 보류'로 표시합니다.
+    </div>
+    <div id="pattern">아직 분석할 데이터가 부족합니다.</div>
+  </details>
+</div>
+
+<div class="card">
+  <div class="sectionbar"><h2>⑨ 저장 / 백업</h2></div>
+  <div class="grid">
+    <button class="primary" onclick="saveDay()">오늘 데이터 저장</button>
+    <button class="secondary" onclick="exportJSON()">JSON 백업</button>
+    <button class="secondary" onclick="document.getElementById('file').click()">JSON 복원</button>
+    <button class="danger" onclick="resetAll()">전체 삭제</button>
+  </div>
+  <input id="file" type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+  <div class="small muted" style="margin-top:10px">데이터는 이 브라우저의 저장공간에 누적됩니다. 기기를 바꾸거나 브라우저 데이터를 삭제하면 백업 파일이 필요합니다.</div>
+</div>
+
+<div class="card">
+  <h2>최근 저장 데이터</h2>
+  <div id="history">없음</div>
+</div>
+
+<footer>
+  이 앱은 과거 데이터의 통계적 유사성을 참고하기 위한 도구이며 미래 수익이나 방향을 보장하지 않습니다.
+  특히 옵션 가격·IV는 장중 변동하므로 반드시 동일한 기준시각으로 입력하세요.
+</footer>
+</main>
+
+<script>
+const KEY='foreign_futures_options_v6';
+const $=id=>document.getElementById(id);
+const num=id=>{const v=parseFloat($(id).value);return Number.isFinite(v)?v:null};
+function today(){const d=new Date(); return d.toISOString().slice(0,10)}
+$('date').value=today();
+
+['fsell','fbuy','csell','cbuy','psell','pbuy'].forEach(id=>$(id).addEventListener('input',calcNets));
+function calcNets(){
+  $('fnet').value=(num('fbuy')??0)-(num('fsell')??0);
+  $('cnet').value=(num('cbuy')??0)-(num('csell')??0);
+  $('pnet').value=(num('pbuy')??0)-(num('psell')??0);
+  checkDerived();
+}
+['spot','fut','basis','strike'].forEach(id=>$(id).addEventListener('input',checkDerived));
+
+function checkDerived(){
+  const s=num('spot'), f=num('fut'), b=num('basis'), k=num('strike');
+  if(s!=null&&f!=null){
+    const auto=f-s;
+    $('basisCheck').textContent='시장베이시스 자동확인: '+auto.toFixed(2)+(b!=null?'  / 입력값 '+b.toFixed(2)+' (차이 '+(b-auto).toFixed(2)+')':'');
+  }
+  if(s!=null&&k!=null){
+    $('atmCheck').textContent='ATM 확인: 현물 '+s.toFixed(2)+' ↔ 행사가 '+k.toFixed(2)+' / 차이 '+Math.abs(s-k).toFixed(2);
+  }
+}
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return []}}
+function saveData(arr){localStorage.setItem(KEY,JSON.stringify(arr))}
+function snapshot(){
+ return {
+  date:$('date').value, contract:$('contract').value, dte:num('dte'),
+  spot:num('spot'), fut:num('fut'), futchg:num('futchg'), vol:num('vol'), volchg:num('volchg'),
+  oi:num('oi'), oichg:num('oichg'), basis:num('basis'), theo:num('theo'), theobasis:num('theobasis'), value:num('value'),
+  fsell:num('fsell'), fbuy:num('fbuy'), fnet:num('fnet'), csell:num('csell'), cbuy:num('cbuy'), cnet:num('cnet'),
+  psell:num('psell'), pbuy:num('pbuy'), pnet:num('pnet'), strike:num('strike'), callpx:num('callpx'), putpx:num('putpx'),
+  calliv:num('calliv'), putiv:num('putiv'), savedAt:new Date().toISOString()
+ };
+}
+function standard(v, arr){
+ const x=arr.filter(n=>Number.isFinite(n)); if(!x.length) return 0;
+ const m=x.reduce((a,b)=>a+b,0)/x.length;
+ const sd=Math.sqrt(x.reduce((a,b)=>a+(b-m)**2,0)/Math.max(1,x.length-1));
+ return sd>0?(v-m)/sd:0;
+}
+function optionScore(d){
+ const c=d.cnet??0,p=d.pnet??0;
+ const denom=Math.abs(c)+Math.abs(p);
+ let flow=denom?100*(c-p)/denom:0;
+ const skew=(d.putiv!=null&&d.calliv!=null)?(d.calliv-d.putiv):0;
+ const ivAdj=Math.max(-20,Math.min(20,skew*8));
+ let pxAdj=0;
+ if(d.callpx!=null&&d.putpx!=null&&(d.callpx+d.putpx)>0){
+   pxAdj=Math.max(-10,Math.min(10,((d.callpx-d.putpx)/(d.callpx+d.putpx))*20));
+ }
+ return Math.max(-100,Math.min(100,flow*0.70+ivAdj*0.20+pxAdj*0.10));
+}
+function scoreFor(d, history){
+ const prev=history.filter(x=>x.date<d.date && x.spot!=null).sort((a,b)=>a.date.localeCompare(b.date));
+ const flows=prev.map(x=>x.fnet).filter(x=>x!=null);
+ const flowZ=flows.length>=5?standard(d.fnet??0,flows):Math.max(-2,Math.min(2,(d.fnet??0)/3000));
+ const flowPts=Math.max(-30,Math.min(30,flowZ*15));
+ const pxDir=d.futchg!=null?Math.max(-1,Math.min(1,d.futchg/3)):0;
+ const oiDir=d.oichg!=null?Math.max(-1,Math.min(1,d.oichg/2000)):0;
+ const priceOi=pxDir*0.65 + Math.sign(d.fnet??0)*Math.abs(oiDir)*0.35;
+ const poPts=priceOi*20;
+ const basisPts=d.basis!=null?Math.max(-10,Math.min(10,d.basis/1.5)):0;
+ const op=optionScore(d), opPts=op*0.25;
+ const ivskew=(d.calliv!=null&&d.putiv!=null)?d.calliv-d.putiv:0;
+ const ivPts=Math.max(-10,Math.min(10,ivskew*1.5));
+ const pxRatio=(d.callpx!=null&&d.putpx!=null&&d.putpx>0)?Math.log(d.callpx/d.putpx):0;
+ const ratioPts=Math.max(-5,Math.min(5,pxRatio*8));
+ return Math.max(-100,Math.min(100,flowPts+poPts+basisPts+opPts+ivPts+ratioPts));
+}
+function classifyPosition(d){
+ const up=(d.futchg??0)>0, down=(d.futchg??0)<0, buy=(d.fnet??0)>0, sell=(d.fnet??0)<0, oiUp=(d.oichg??0)>0, oiDown=(d.oichg??0)<0;
+ if(up&&buy&&oiUp)return '신규매수';
+ if(down&&sell&&oiUp)return '신규매도';
+ if(up&&sell&&oiDown)return '숏커버';
+ if(down&&buy&&oiDown)return '롱청산';
+ return '혼합';
+}
+function calc(){
+ calcNets();
+ const hist=load(), d=snapshot(), sc=scoreFor(d,hist), op=optionScore(d);
+ $('score').textContent=(sc>0?'+':'')+sc.toFixed(1);
+ $('opscore').textContent=(op>0?'+':'')+op.toFixed(1);
+ $('position').textContent=classifyPosition(d);
+ const iv=(d.calliv!=null&&d.putiv!=null)?d.calliv-d.putiv:null;
+ $('ivskew').textContent=iv==null?'-':(iv>0?'+':'')+iv.toFixed(2)+'%p';
+ $('todayText').textContent=sc>=60?'강한 상승 쪽 수급 구조':sc>=20?'상승 쪽 수급 우세':sc>-20?'혼합/중립 수급':sc>-60?'하락 쪽 수급 우세':'강한 하락 쪽 수급 구조';
+ analyze(hist,d,sc);
+}
+function analyze(hist,d,sc){
+ const usable=hist.filter(x=>x.date<d.date && x.spot!=null);
+ if(usable.length<30){$('upside').textContent='표본 부족';$('pattern').innerHTML='<div class="result warn">최소 30거래일 이상 누적 후 유사패턴 분석을 시작합니다.</div>';return}
+ const scored=usable.map(x=>({...x,score:scoreFor(x,usable)}));
+ const op=optionScore(d), f=d.fnet??0, b=d.basis??0, oi=d.oichg??0;
+ const fs=scored.map(x=>x.fnet??0); const bs=scored.map(x=>x.basis??0); const os=scored.map(x=>x.oichg??0);
+ const near=scored.map(x=>{
+   const a=Math.min(3,Math.abs(x.score-sc)/20);
+   const bb=Math.min(3,Math.abs(optionScore(x)-op)/25);
+   const c=Math.min(3,Math.abs(standard(x.fnet??0,fs)-standard(f,fs))/1.5);
+   const e=Math.min(3,Math.abs(standard(x.basis??0,bs)-standard(b,bs))/1.5);
+   const q=Math.min(3,Math.abs(standard(x.oichg??0,os)-standard(oi,os))/1.5);
+   return {...x,dist:a+bb+c+e+q};
+ }).sort((a,b)=>a.dist-b.dist).slice(0,12);
+ const rows=near.map(x=>{
+   const i=usable.findIndex(y=>y.date===x.date);
+   const f20=usable[i+20], f60=usable[i+60];
+   const r20=f20?((f20.spot-x.spot)/x.spot*100):null;
+   const r60=f60?((f60.spot-x.spot)/x.spot*100):null;
+   return {...x,r20,r60};
+ });
+ const r20=rows.filter(x=>x.r20!=null), r60=rows.filter(x=>x.r60!=null);
+ const rise20=r20.length?r20.filter(x=>x.r20>0).length/r20.length*100:null;
+ const avg20=r20.length?r20.reduce((a,x)=>a+x.r20,0)/r20.length:null;
+ const rise60=r60.length?r60.filter(x=>x.r60>0).length/r60.length*100:null;
+ const avg60=r60.length?r60.reduce((a,x)=>a+x.r60,0)/r60.length:null;
+ let label='판단 보류';
+ if(r20.length>=5) label=rise20>=70?'높음':rise20>=55?'보통 이상':rise20>=45?'제한적':'낮음';
+ $('upside').textContent=label;
+ let scen='표본 부족';
+ if(r60.length>=5) scen=rise60>=65?'상승 시나리오':rise60<=35?'하락 위험':'혼조';
+ let html=`<div class="kpi">
+ <div class="k"><span>유사사례</span><b>${rows.length}건</b></div>
+ <div class="k"><span>20일 상승 비율</span><b>${rise20==null?'-':rise20.toFixed(1)+'%'}</b></div>
+ <div class="k"><span>20일 평균</span><b>${avg20==null?'-':(avg20>0?'+':'')+avg20.toFixed(2)+'%'}</b></div>
+ <div class="k"><span>60일 시나리오</span><b>${scen}</b></div></div>`;
+ html+=`<div class="result ${label==='높음'?'good':label==='낮음'?'bad':'warn'}">추가 상승 여력: ${label}</div>`;
+ html+=`<div class="small muted" style="margin:8px 0">※ 유사사례는 점수·옵션수급·선물수급·베이시스·OI 변화를 함께 비교한 과거 사례입니다.</div>`;
+ html+='<table><thead><tr><th>날짜</th><th>점수</th><th>20일</th><th>60일</th></tr></thead><tbody>';
+ rows.forEach(x=>html+=`<tr><td>${x.date}</td><td>${x.score.toFixed(1)}</td><td>${x.r20==null?'-':(x.r20>0?'+':'')+x.r20.toFixed(2)+'%'}</td><td>${x.r60==null?'-':(x.r60>0?'+':'')+x.r60.toFixed(2)+'%'}</td></tr>`);
+ html+='</tbody></table>';
+ $('pattern').innerHTML=html;
+}
+function saveDay(){
+ calcNets();
+ const d=snapshot(), arr=load();
+ const idx=arr.findIndex(x=>x.date===d.date);
+ if(idx>=0) arr[idx]=d; else arr.push(d);
+ arr.sort((a,b)=>a.date.localeCompare(b.date)); saveData(arr);
+ renderHistory(); calc();
+ alert('오늘 데이터가 저장되었습니다.');
+}
+function renderHistory(){
+ const arr=load().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
+ if(!arr.length){$('history').textContent='없음';return}
+ let h='<table><thead><tr><th>날짜</th><th>월물</th><th>K200</th><th>선물</th><th>외인선물</th><th>OI</th></tr></thead><tbody>';
+ arr.forEach(x=>h+=`<tr><td>${x.date}</td><td>F${x.contract||'-'}</td><td>${x.spot??'-'}</td><td>${x.fut??'-'}</td><td>${x.fnet??'-'}</td><td>${x.oichg??'-'}</td></tr>`);
+ h+='</tbody></table>'; $('history').innerHTML=h;
+}
+function exportJSON(){
+ const blob=new Blob([JSON.stringify(load(),null,2)],{type:'application/json'});
+ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='외인선물옵션_v6_백업.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function importJSON(e){
+ const f=e.target.files[0]; if(!f)return; const r=new FileReader();
+ r.onload=()=>{try{const d=JSON.parse(r.result); if(!Array.isArray(d))throw 0; saveData(d); renderHistory(); alert('복원 완료');}catch(_){alert('올바른 백업 JSON이 아닙니다.')}}; r.readAsText(f);
+}
+function resetAll(){if(confirm('저장된 모든 데이터를 삭제할까요?')){localStorage.removeItem(KEY);renderHistory();}}
+renderHistory(); calcNets(); checkDerived();
+</script>
+</body>
+</html>
